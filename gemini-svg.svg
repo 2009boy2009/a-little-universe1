@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <!-- Sky Gradient -->
+    <linearGradient id="skyGrad" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#140824" />
+      <stop offset="35%" stop-color="#2d1342" />
+      <stop offset="70%" stop-color="#5a2259" />
+      <stop offset="100%" stop-color="#8a3663" />
+    </linearGradient>
+
+    <!-- Cloud Gradients -->
+    <linearGradient id="cloudG1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#d65f97" stop-opacity="0.85" />
+      <stop offset="50%" stop-color="#913b73" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#3d1442" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="cloudG2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ff9ac4" stop-opacity="0.9" />
+      <stop offset="60%" stop-color="#8c336b" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#270c38" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Water Reflection Gradient -->
+    <linearGradient id="waterGrad" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#e0699c" />
+      <stop offset="50%" stop-color="#7a2a5d" />
+      <stop offset="100%" stop-color="#1f0930" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background Sky -->
+  <rect width="1920" height="1080" fill="url(#skyGrad)" />
+
+  <!-- Tiny Background Stars -->
+  <g fill="#ffffff" opacity="0.8">
+    <circle cx="200" cy="150" r="1.5" /><circle cx="450" cy="80" r="1" /><circle cx="820" cy="200" r="2" />
+    <circle cx="1150" cy="100" r="1.5" /><circle cx="1500" cy="180" r="2" /><circle cx="1780" cy="90" r="1" />
+    <circle cx="150" cy="350" r="1" /><circle cx="380" cy="280" r="1.5" /><circle cx="950" cy="310" r="1" />
+    <circle cx="1300" cy="250" r="2" /><circle cx="1650" cy="300" r="1.5" /><circle cx="100" cy="500" r="1.5" />
+  </g>
+
+  <!-- Glowing Crescent Moon -->
+  <g transform="translate(1300, 120)">
+    <path d="M 60 0 A 55 55 0 1 0 115 75 A 42 42 0 1 1 60 0 Z" fill="#fff5d1" filter="drop-shadow(0 0 25px rgba(255,230,160,0.8))" />
+  </g>
+
+  <!-- Shooting Star -->
+  <path d="M 1000 120 L 1150 220" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.9" filter="drop-shadow(0 0 8px #ffb3e6)" />
+  <circle cx="1000" cy="120" r="3" fill="#fff" filter="drop-shadow(0 0 10px #fff)" />
+
+  <!-- Clouds Layer 1 (Back) -->
+  <path d="M-100 650 Q 200 450 600 550 Q 1000 400 1400 520 Q 1700 450 2020 580 L 2020 1080 L -100 1080 Z" fill="url(#cloudG1)" />
+
+  <!-- Clouds Layer 2 (Front Large Formations) -->
+  <path d="M-50 720 Q 300 520 750 640 Q 1200 500 1600 620 Q 1850 560 2020 700 L 2020 1080 L -50 1080 Z" fill="url(#cloudG2)" />
+
+  <!-- Mountains / Hills Silhouette on Right -->
+  <path d="M 1550 820 Q 1700 740 1820 800 Q 1900 780 1920 810 L 1920 950 L 1550 950 Z" fill="#2d123b" opacity="0.85" />
+
+  <!-- Water Horizon & Reflection -->
+  <rect x="0" y="930" width="1920" height="150" fill="url(#waterGrad)" />
+  <!-- Sun/Moon Glow Reflection on Water -->
+  <ellipse cx="1360" cy="940" rx="180" ry="25" fill="#ff9ec7" opacity="0.5" filter="drop-shadow(0 0 20px #ff70b0)" />
+  <ellipse cx="1360" cy="960" rx="120" ry="15" fill="#ffd1e6" opacity="0.4" />
+  <ellipse cx="1360" cy="980" rx="70" ry="10" fill="#fff" opacity="0.3" />
+
+  <!-- Flowers & Foliage Foreground (Bottom Left & Right) -->
+  <!-- Left Side Flowers -->
+  <g transform="translate(0, 800)">
+    <!-- Stems & Leaves -->
+    <path d="M 30 280 Q 50 180 80 100" stroke="#25102d" stroke-width="8" fill="none" />
+    <path d="M 70 280 Q 110 160 160 120" stroke="#25102d" stroke-width="6" fill="none" />
+    <path d="M 120 280 Q 170 190 230 150" stroke="#25102d" stroke-width="5" fill="none" />
+    
+    <!-- Flower Blossoms (Pink Cosmos style) -->
+    <!-- Flower 1 -->
+    <g transform="translate(80, 100)" fill="#ffb3df" stroke="#fff" stroke-width="1">
+      <circle cx="0" cy="-15" r="10" /><circle cx="15" cy="-5" r="10" /><circle cx="10" cy="12" r="10" />
+      <circle cx="-10" cy="12" r="10" /><circle cx="-15" cy="-5" r="10" />
+      <circle cx="0" cy="0" r="5" fill="#ffeb7b" />
+    </g>
+    <!-- Flower 2 -->
+    <g transform="translate(160, 120)" fill="#ffd1ec" stroke="#fff" stroke-width="1">
+      <circle cx="0" cy="-14" r="9" /><circle cx="13" cy="-4" r="9" /><circle cx="9" cy="11" r="9" />
+      <circle cx="-9" cy="11" r="9" /><circle cx="-13" cy="-4" r="9" />
+      <circle cx="0" cy="0" r="4" fill="#ffeb7b" />
+    </g>
+    <!-- Flower 3 -->
+    <g transform="translate(230, 150)" fill="#ff9ecb" stroke="#fff" stroke-width="1">
+      <circle cx="0" cy="-12" r="8" /><circle cx="11" cy="-3" r="8" /><circle cx="7" cy="9" r="8" />
+      <circle cx="-7" cy="9" r="8" /><circle cx="-11" cy="-3" r="8" />
+      <circle cx="0" cy="0" r="4" fill="#ffeb7b" />
+    </g>
+  </g>
+</svg>
