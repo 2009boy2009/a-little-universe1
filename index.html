@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#160f2c">
   <title>A Little Universe ✦</title>
-  <link rel="preconnect" href="https://images.pexels.com">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -13,10 +12,8 @@
 </head>
 <body>
   <!-- WORLD ONE: separate entrance landscape -->
-  <div class="entrance-world" aria-hidden="true">
-    <div id="entranceStars"></div>
-    <div class="entrance-fireflies"></div>
-  </div>
+  <canvas id="worldCanvas" aria-hidden="true"></canvas>
+  <div class="entrance-world" aria-hidden="true"></div>
 
   <section id="loginScreen" class="login-screen">
     <div class="login-content">
@@ -38,13 +35,7 @@
 
   <!-- WORLD TWO: its own landscape, different from the entrance -->
   <main id="universeScreen" class="hidden">
-    <div class="heaven-world" aria-hidden="true">
-      <div id="universeStars"></div>
-      <div class="scene-shooting-stars">
-        <i></i><i></i><i></i>
-      </div>
-      <div id="universeDust"></div>
-    </div>
+    <div class="heaven-world" aria-hidden="true"></div>
 
     <div class="heaven-content">
       <div class="site-mark"><span>✦</span> a little universe</div>
@@ -105,5 +96,6 @@
 
   <audio id="audioPlayer" preload="none"></audio>
   <script src="app.js"></script>
+  <script type="module" src="scene.js"></script>
 </body>
 </html>

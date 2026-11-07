@@ -218,6 +218,8 @@ $("loginForm").addEventListener("submit", async event => {
   window.setTimeout(async () => {
     $("loginScreen").classList.add("hidden");
     $("universeScreen").classList.remove("hidden");
+    window.__universeWorld = "heaven";
+    document.dispatchEvent(new CustomEvent("universe:world", { detail: "heaven" }));
     makeStars("universeStars", 78, "universe-star");
     makeDust();
 
