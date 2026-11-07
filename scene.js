@@ -12,9 +12,9 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.12;
 
-const camera = new THREE.PerspectiveCamera(43, window.innerWidth / window.innerHeight, 0.1, 120);
-camera.position.set(0, 1.6, 19);
-camera.lookAt(0, 0.1, -2);
+const camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 140);
+camera.position.set(0, 0.25, 24);
+camera.lookAt(0, -0.15, -3.2);
 
 const clock = new THREE.Clock();
 const worlds = {};
@@ -51,9 +51,9 @@ function moonGlowTexture() {
   const c = document.createElement('canvas'); c.width = c.height = 256;
   const ctx = c.getContext('2d');
   const g = ctx.createRadialGradient(128,128,8,128,128,126);
-  g.addColorStop(0, 'rgba(255,220,239,.52)');
-  g.addColorStop(.25, 'rgba(255,178,221,.18)');
-  g.addColorStop(1, 'rgba(255,150,210,0)');
+  g.addColorStop(0, 'rgba(220,211,255,.48)');
+  g.addColorStop(.25, 'rgba(183,165,245,.18)');
+  g.addColorStop(1, 'rgba(157,143,224,0)');
   ctx.fillStyle = g; ctx.fillRect(0,0,256,256);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
@@ -64,13 +64,13 @@ function addMoon(group, x, y, z, radius) {
   moon.position.set(x,y,z);
   const sphere = new THREE.Mesh(
     new THREE.SphereGeometry(radius, 72, 56),
-    new THREE.MeshStandardMaterial({ color: 0xffe7f2, roughness: 0.96, metalness: 0, emissive: 0x241322, emissiveIntensity: 0.13 })
+    new THREE.MeshStandardMaterial({ color: 0xffe7f2, roughness: 0.96, metalness: 0, emissive: 0x302b48, emissiveIntensity: 0.22 })
   );
   // Side-lit sphere: the visible lit portion forms a true 3D crescent terminator.
   const light = new THREE.DirectionalLight(0xffc6df, 4.0);
-  light.position.set(4.5, 0.5, -3.1);
+  light.position.set(2.8, 0.35, 4.8);
   moon.add(sphere, light);
-  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture, color: 0xffc4e5, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.62 }));
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture, color: 0xd8caff, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.62 }));
   glow.scale.set(radius * 5.4, radius * 5.4, 1);
   glow.position.z = -0.12;
   moon.add(glow);
@@ -103,7 +103,7 @@ function addCloudBank(group, opts) {
 
 function terrainGeometry(width, depth, segments, baseY, peak, seed) {
   const verts = [], colors = [], indices = [];
-  const colorLow = new THREE.Color(0x1a1235), colorHigh = new THREE.Color(0x57406e);
+  const colorLow = new THREE.Color(0x11132f), colorHigh = new THREE.Color(0x4a477b);
   for (let j=0;j<=segments;j++) {
     const v=j/segments;
     for (let i=0;i<=segments;i++) {
@@ -151,19 +151,19 @@ function createWorld(kind) {
   scene.fog = new THREE.FogExp2(kind === 'entrance' ? 0x24143b : 0x28163d, 0.012);
   const group = new THREE.Group(); scene.add(group);
   scene.add(new THREE.AmbientLight(0x8b6d9e, 1.05));
-  const horizonLight = new THREE.PointLight(0xe58dbd, 16, 34, 2);
+  const horizonLight = new THREE.PointLight(0x9d83d8, 10, 38, 2);
   horizonLight.position.set(-1.5,-3.2,1); scene.add(horizonLight);
-  const moonX = kind === 'entrance' ? 5.8 : 5.6;
-  const moonY = kind === 'entrance' ? 5.3 : 5.8;
+  const moonX = (window.innerWidth / window.innerHeight < 0.78) ? 3.0 : 6.0;
+  const moonY = kind === 'entrance' ? 5.0 : 5.35;
   const moon = addMoon(group, moonX, moonY, -3.1, kind === 'entrance' ? 1.22 : 1.38);
   const stars = makeStarField(group, kind === 'entrance' ? 1250 : 1700, 44, -8, -18, kind === 'entrance' ? .095 : .085);
   const farStars = makeStarField(group, 460, 54, -22, -35, .055);
 
   // Fine nebula veil: transparent, moving cloud volumes at different depths.
-  addCloudBank(group,{x:-1.2,y:2.1,z:-7.5,width:32,height:12,a:0x563a83,b:0xd77ba9,opacity:kind==='entrance'?.30:.38,seed:3.4,rotation:.02});
-  addCloudBank(group,{x:-10,y:-1.1,z:-2.8,width:18,height:9,a:0x9c5d9a,b:0xf0a5c1,opacity:.65,seed:8.2,rotation:.12});
-  addCloudBank(group,{x:10.5,y:-.8,z:-2.6,width:18,height:8,a:0x89548f,b:0xe998b9,opacity:.53,seed:12.7,rotation:-.1});
-  addCloudBank(group,{x:0,y:-3.1,z:-4.6,width:34,height:5.5,a:0x8a578e,b:0xe99bb8,opacity:.34,seed:19.2});
+  addCloudBank(group,{x:-1.2,y:2.1,z:-7.5,width:32,height:12,a:0x4b438c,b:0x9b80c9,opacity:kind==='entrance'?.30:.38,seed:3.4,rotation:.02});
+  addCloudBank(group,{x:-10,y:-1.1,z:-2.8,width:18,height:9,a:0x66558f,b:0xc29bdc,opacity:.58,seed:8.2,rotation:.12});
+  addCloudBank(group,{x:10.5,y:-.8,z:-2.6,width:18,height:8,a:0x62518e,b:0xb88fd4,opacity:.50,seed:12.7,rotation:-.1});
+  addCloudBank(group,{x:0,y:-3.1,z:-4.6,width:34,height:5.5,a:0x51477f,b:0x987db8,opacity:.30,seed:19.2});
 
   // Distant, middle and foreground ridges create real parallax depth.
   addMountain(group,{width:46,depth:8,baseY:-5.5,peak:4.5,z:-5.5,seed:2.3});
@@ -205,8 +205,15 @@ document.addEventListener('universe:world', event => {
 
 const resize = () => {
   const w=window.innerWidth,h=window.innerHeight;
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));
-  renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix();
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.35));
+  renderer.setSize(w,h,false);
+  camera.aspect=w/h;
+  camera.position.set(0, 0.25, 24);
+  camera.lookAt(0, -0.15, -3.2);
+  camera.updateProjectionMatrix();
+  const moonX = (w / h < 0.78) ? 3.0 : 6.0;
+  worlds.entrance.moon.position.x = moonX;
+  worlds.heaven.moon.position.x = moonX;
 };
 window.addEventListener('resize',resize,{passive:true});
 
