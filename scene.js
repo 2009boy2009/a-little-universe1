@@ -1,244 +1,136 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
-/* A Little Universe — two separate, real-time 3D night scenes.
-   All scenery is generated locally in WebGL; no screenshot or flat background image is used. */
+/* A Little Universe — two separate animated 3D worlds.
+   The reference is recreated as layered scenery, not used as a flat screenshot. */
 const canvas = document.getElementById('worldCanvas');
-if (!canvas) throw new Error('The world canvas is missing.');
-
+if (!canvas) throw new Error('Missing #worldCanvas');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-renderer.setSize(window.innerWidth, window.innerHeight, false);
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.65));
+renderer.setSize(innerWidth, innerHeight, false);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.12;
+renderer.toneMappingExposure = 1.18;
 
-const camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 140);
-camera.position.set(0, 0.25, 24);
-camera.lookAt(0, -0.15, -3.2);
-
+const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, .1, 180);
+camera.position.set(0, .15, 25);
+camera.lookAt(0, -1.1, -4);
 const clock = new THREE.Clock();
 const worlds = {};
-let activeWorld = 'entrance';
-let frame = 0;
-const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let active = 'entrance';
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-function seeded(i) {
-  const x = Math.sin(i * 127.1 + 311.7) * 43758.5453;
-  return x - Math.floor(x);
-}
-function makeStarField(group, count, spread, zNear, zFar, size) {
-  const positions = new Float32Array(count * 3);
-  const colors = new Float32Array(count * 3);
-  for (let i = 0; i < count; i++) {
-    positions[i * 3] = (seeded(i + 2) - 0.5) * spread;
-    positions[i * 3 + 1] = (seeded(i + 300) - 0.5) * spread * 0.62;
-    positions[i * 3 + 2] = zFar + seeded(i + 800) * (zNear - zFar);
-    const tint = seeded(i + 900);
-    colors[i * 3] = 0.82 + tint * 0.18;
-    colors[i * 3 + 1] = 0.69 + tint * 0.22;
-    colors[i * 3 + 2] = 0.88 + tint * 0.12;
+function rand(n) { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); }
+function addStars(group, count, width, height, z0, z1, size, opacity) {
+  const p = new Float32Array(count * 3), c = new Float32Array(count * 3);
+  for (let i=0;i<count;i++) {
+    p[i*3] = (rand(i+2)-.5)*width; p[i*3+1] = (rand(i+300)-.5)*height; p[i*3+2] = z0 + rand(i+800)*(z1-z0);
+    const warm = rand(i+1000); c[i*3]=.72+warm*.28; c[i*3+1]=.64+warm*.25; c[i*3+2]=.82+warm*.18;
   }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-  const material = new THREE.PointsMaterial({ size, sizeAttenuation: true, vertexColors: true, transparent: true, opacity: 0.95, depthWrite: false });
-  const points = new THREE.Points(geometry, material);
-  group.add(points);
-  return points;
+  const g = new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(p,3)); g.setAttribute('color',new THREE.BufferAttribute(c,3));
+  const m = new THREE.PointsMaterial({size,sizeAttenuation:true,vertexColors:true,transparent:true,opacity,depthWrite:false,blending:THREE.AdditiveBlending});
+  const pts = new THREE.Points(g,m); group.add(pts); return pts;
+}
+function glowTexture() {
+  const c=document.createElement('canvas'); c.width=c.height=256; const x=c.getContext('2d');
+  const g=x.createRadialGradient(128,128,2,128,128,126); g.addColorStop(0,'rgba(255,222,242,.75)');g.addColorStop(.18,'rgba(255,174,222,.30)');g.addColorStop(1,'rgba(255,130,205,0)');x.fillStyle=g;x.fillRect(0,0,256,256);
+  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;
+}
+const glowMap=glowTexture();
+function addMoon(group, x, y, r) {
+  const pivot=new THREE.Group();pivot.position.set(x,y,-7);group.add(pivot);
+  const ball=new THREE.Mesh(new THREE.SphereGeometry(r,96,72),new THREE.MeshStandardMaterial({color:0xffe5ef,roughness:1,emissive:0x4a2039,emissiveIntensity:.12}));
+  // Light comes from the viewer's right, making the illuminated crescent face the camera.
+  const key=new THREE.DirectionalLight(0xffc1dd,4.5);key.position.set(4.5,1.1,8);pivot.add(ball,key);
+  const halo=new THREE.Sprite(new THREE.SpriteMaterial({map:glowMap,color:0xffb9dd,transparent:true,opacity:.8,depthWrite:false,blending:THREE.AdditiveBlending}));halo.scale.set(r*5.8,r*5.8,1);halo.position.z=-.18;pivot.add(halo);
+  return pivot;
 }
 
-function moonGlowTexture() {
-  const c = document.createElement('canvas'); c.width = c.height = 256;
-  const ctx = c.getContext('2d');
-  const g = ctx.createRadialGradient(128,128,8,128,128,126);
-  g.addColorStop(0, 'rgba(220,211,255,.48)');
-  g.addColorStop(.25, 'rgba(183,165,245,.18)');
-  g.addColorStop(1, 'rgba(157,143,224,0)');
-  ctx.fillStyle = g; ctx.fillRect(0,0,256,256);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+// Cloud puffs are overlapping lit 3D spheres, not a 2D cloud texture.
+const cloudMaterials = new Map();
+function getCloudMaterial(shadow, highlight) {
+  const key = shadow + '-' + highlight;
+  if (!cloudMaterials.has(key)) cloudMaterials.set(key, new THREE.MeshStandardMaterial({
+    color: highlight, emissive: shadow, emissiveIntensity: .16, roughness: 1, metalness: 0,
+    transparent: true, opacity: .86, depthWrite: false
+  }));
+  return cloudMaterials.get(key);
 }
-const glowTexture = moonGlowTexture();
-
-function addMoon(group, x, y, z, radius) {
-  const moon = new THREE.Group();
-  moon.position.set(x,y,z);
-  const sphere = new THREE.Mesh(
-    new THREE.SphereGeometry(radius, 72, 56),
-    new THREE.MeshStandardMaterial({ color: 0xffe7f2, roughness: 0.96, metalness: 0, emissive: 0x302b48, emissiveIntensity: 0.22 })
-  );
-  // Side-lit sphere: the visible lit portion forms a true 3D crescent terminator.
-  const light = new THREE.DirectionalLight(0xffc6df, 4.0);
-  light.position.set(2.8, 0.35, 4.8);
-  moon.add(sphere, light);
-  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture, color: 0xd8caff, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.62 }));
-  glow.scale.set(radius * 5.4, radius * 5.4, 1);
-  glow.position.z = -0.12;
-  moon.add(glow);
-  // A tiny atmospheric rim, not a flat crescent graphic.
-  group.add(moon);
-  return moon;
-}
-
-function cloudMaterial(colorA, colorB, opacity, seed) {
-  return new THREE.ShaderMaterial({
-    transparent: true, depthWrite: false, side: THREE.DoubleSide,
-    uniforms: { uTime: { value: 0 }, uColorA: { value: new THREE.Color(colorA) }, uColorB: { value: new THREE.Color(colorB) }, uOpacity: { value: opacity }, uSeed: { value: seed } },
-    vertexShader: `varying vec2 vUv; varying vec3 vWorld; void main(){vUv=uv; vec4 w=modelMatrix*vec4(position,1.0); vWorld=w.xyz; gl_Position=projectionMatrix*viewMatrix*w;}`,
-    fragmentShader: `
-      varying vec2 vUv; varying vec3 vWorld; uniform float uTime; uniform vec3 uColorA; uniform vec3 uColorB; uniform float uOpacity; uniform float uSeed;
-      float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7))+uSeed)*43758.5453);}
-      float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
-      float fbm(vec2 p){float v=0.0,a=.55;for(int i=0;i<5;i++){v+=a*noise(p);p*=2.02;a*=.5;}return v;}
-      void main(){vec2 p=vUv; p.x+=uTime*.004; float n=fbm(p*vec2(5.2,2.8)+vec2(uSeed,0.0)); float shape=smoothstep(.43,.73,n); float edge=smoothstep(0.0,.17,p.y)*smoothstep(0.0,.16,1.0-p.y); float alpha=shape*edge*uOpacity; vec3 col=mix(uColorA,uColorB,smoothstep(.38,.78,p.y+n*.24)); gl_FragColor=vec4(col,alpha);}`
-  });
-}
-function addCloudBank(group, opts) {
-  const mat = cloudMaterial(opts.a, opts.b, opts.opacity, opts.seed);
-  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(opts.width, opts.height, 1, 1), mat);
-  mesh.position.set(opts.x, opts.y, opts.z);
-  mesh.rotation.z = opts.rotation || 0;
-  group.add(mesh);
-  return mesh;
-}
-
-function terrainGeometry(width, depth, segments, baseY, peak, seed) {
-  const verts = [], colors = [], indices = [];
-  const colorLow = new THREE.Color(0x11132f), colorHigh = new THREE.Color(0x4a477b);
-  for (let j=0;j<=segments;j++) {
-    const v=j/segments;
-    for (let i=0;i<=segments;i++) {
-      const u=i/segments, x=(u-.5)*width;
-      const ridge = Math.pow(Math.max(0, Math.sin(u*17.1+seed)*.48 + Math.sin(u*31.4+seed*2)*.27 + Math.sin(u*7.7+seed*3)*.25), 1.35);
-      const envelope = Math.pow(Math.max(0, Math.sin(Math.PI*u)), .38);
-      const y = baseY + ridge*peak*envelope - v*depth;
-      const z = -3.8 + v*1.5;
-      verts.push(x,y,z);
-      const shade = Math.max(0, Math.min(1, .18 + ridge*.68 + (1-v)*.16));
-      const c = colorLow.clone().lerp(colorHigh, shade);
-      colors.push(c.r,c.g,c.b);
-      if(i<segments && j<segments){const a=j*(segments+1)+i,b=a+1,c=a+segments+1,d=c+1;indices.push(a,c,b,b,c,d);}
-    }
+function addCloudBank(group, cfg) {
+  const bank = new THREE.Group(); bank.position.set(cfg.x, cfg.y, cfg.z); group.add(bank);
+  const count = cfg.count || 34;
+  for (let i=0;i<count;i++) {
+    const t=i/(count-1), envelope=Math.sin(Math.PI*t)**.5;
+    const radius=cfg.scale*(.48+rand(i+cfg.seed)*.68)*(.62+.38*envelope);
+    const puff=new THREE.Mesh(new THREE.SphereGeometry(radius,24,18),getCloudMaterial(cfg.shadow,cfg.light));
+    puff.position.set((t-.5)*cfg.width+(rand(i+50)-.5)*.75,(rand(i+100)-.5)*cfg.height+Math.sin(t*Math.PI*2+cfg.seed)*.28,(rand(i+150)-.5)*cfg.depth);
+    puff.scale.set(1.35,.72+rand(i+220)*.55,.76+rand(i+250)*.55);
+    bank.add(puff);
   }
-  const g = new THREE.BufferGeometry();
-  g.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
-  g.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
-  g.setIndex(indices); g.computeVertexNormals(); return g;
+  return bank;
 }
-function addMountain(group, cfg) {
-  const geom = terrainGeometry(cfg.width, cfg.depth, 110, cfg.baseY, cfg.peak, cfg.seed);
-  const mat = new THREE.MeshStandardMaterial({ vertexColors:true, roughness:1, metalness:0, flatShading:false, side:THREE.DoubleSide });
-  const mesh = new THREE.Mesh(geom,mat); mesh.position.z=cfg.z; group.add(mesh); return mesh;
-}
-
-function addLake(group, moonX, variant) {
-  const geometry = new THREE.PlaneGeometry(42, 12, 1, 1);
-  const material = new THREE.ShaderMaterial({
-    transparent: false, depthWrite: true,
-    uniforms: { uTime:{value:0}, uMoonX:{value:moonX}, uVariant:{value:variant} },
-    vertexShader: `varying vec2 vUv; varying vec3 vPos; void main(){vUv=uv;vec4 p=modelMatrix*vec4(position,1.0);vPos=p.xyz;gl_Position=projectionMatrix*viewMatrix*p;}`,
-    fragmentShader: `
-      varying vec2 vUv; varying vec3 vPos; uniform float uTime; uniform float uMoonX; uniform float uVariant;
-      float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
-      float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
-      void main(){float y=vUv.y; float wave=sin(vUv.x*74.0+uTime*1.3)*.003+sin(vUv.x*29.0-uTime*.8)*.006;float rip=sin((y*68.0+wave*160.0)+uTime*1.5)*.5+.5;float streak=exp(-pow((vUv.x-uMoonX)*19.0,2.0))*exp(-pow((y-.70)*3.8,2.0));float glint=streak*(.22+.42*rip);vec3 deep=vec3(.045,.035,.12);vec3 mid=vec3(.18,.09,.22);vec3 col=mix(deep,mid,smoothstep(0.0,1.0,y));col+=vec3(.62,.30,.48)*glint;col+=vec3(.23,.17,.34)*rip*.055;float horizonFade=smoothstep(0.0,.18,y);col=mix(vec3(.12,.07,.19),col,horizonFade);gl_FragColor=vec4(col,1.0);}`
-  });
-  const lake = new THREE.Mesh(geometry,material); lake.position.set(0,-6.8,-1.5); group.add(lake); return lake;
-}
-
-function createWorld(kind) {
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(kind === 'entrance' ? 0x160d2d : 0x1b1034);
-  scene.fog = new THREE.FogExp2(kind === 'entrance' ? 0x24143b : 0x28163d, 0.012);
-  const group = new THREE.Group(); scene.add(group);
-  scene.add(new THREE.AmbientLight(0x8b6d9e, 1.05));
-  const horizonLight = new THREE.PointLight(0x9d83d8, 10, 38, 2);
-  horizonLight.position.set(-1.5,-3.2,1); scene.add(horizonLight);
-  const moonX = (window.innerWidth / window.innerHeight < 0.78) ? 3.0 : 6.0;
-  const moonY = kind === 'entrance' ? 5.0 : 5.35;
-  const moon = addMoon(group, moonX, moonY, -3.1, kind === 'entrance' ? 1.22 : 1.38);
-  const stars = makeStarField(group, kind === 'entrance' ? 1250 : 1700, 44, -8, -18, kind === 'entrance' ? .095 : .085);
-  const farStars = makeStarField(group, 460, 54, -22, -35, .055);
-
-  // Fine nebula veil: transparent, moving cloud volumes at different depths.
-  addCloudBank(group,{x:-1.2,y:2.1,z:-7.5,width:32,height:12,a:0x4b438c,b:0x9b80c9,opacity:kind==='entrance'?.30:.38,seed:3.4,rotation:.02});
-  addCloudBank(group,{x:-10,y:-1.1,z:-2.8,width:18,height:9,a:0x66558f,b:0xc29bdc,opacity:.58,seed:8.2,rotation:.12});
-  addCloudBank(group,{x:10.5,y:-.8,z:-2.6,width:18,height:8,a:0x62518e,b:0xb88fd4,opacity:.50,seed:12.7,rotation:-.1});
-  addCloudBank(group,{x:0,y:-3.1,z:-4.6,width:34,height:5.5,a:0x51477f,b:0x987db8,opacity:.30,seed:19.2});
-
-  // Distant, middle and foreground ridges create real parallax depth.
-  addMountain(group,{width:46,depth:8,baseY:-5.5,peak:4.5,z:-5.5,seed:2.3});
-  addMountain(group,{width:43,depth:7,baseY:-6.3,peak:3.1,z:-2.2,seed:6.8});
-  addMountain(group,{width:49,depth:5.4,baseY:-7.1,peak:2.4,z:1.0,seed:11.2});
-  const lake = addLake(group, .64, kind === 'entrance' ? 0 : 1);
-
-  // Small luminous points near the waterline, moving gently at different depths.
-  const fireflyPositions = [];
-  for(let i=0;i<65;i++) fireflyPositions.push((seeded(i+41)-.5)*34,-4.1-seeded(i+77)*3.7,1.8+seeded(i+99)*1.2);
-  const fg = new THREE.BufferGeometry(); fg.setAttribute('position',new THREE.Float32BufferAttribute(fireflyPositions,3));
-  const fireflies = new THREE.Points(fg,new THREE.PointsMaterial({color:0xffb9df,size:.075,transparent:true,opacity:.72,blending:THREE.AdditiveBlending,depthWrite:false})); group.add(fireflies);
-
-  // A few long, delicate shooting stars are 3D line objects rather than CSS streaks.
-  const shooting = [];
-  for(let i=0;i<3;i++){
-    const points=[new THREE.Vector3(-14+i*9,7-i*1.2,-4),new THREE.Vector3(-12+i*9,6.1-i*1.2,-4)];
-    const geo=new THREE.BufferGeometry().setFromPoints(points);
-    const line=new THREE.Line(geo,new THREE.LineBasicMaterial({color:0xffd8ee,transparent:true,opacity:0}));
-    group.add(line); shooting.push({line,offset:i*7.2});
+function ridgeGeometry(width, segments, baseline, amplitude, seed, jagged=1) {
+  const positions=[],colors=[],indices=[];const dark=new THREE.Color(0x17132f),lit=new THREE.Color(0x55416e);
+  for(let i=0;i<=segments;i++){
+    const u=i/segments,x=(u-.5)*width;
+    const peak=Math.max(0,Math.sin(u*15.2+seed)*.36+Math.sin(u*31.1+seed*2)*.24+Math.sin(u*7.1+seed*4)*.4);
+    const edge=Math.pow(Math.max(0,Math.sin(Math.PI*u)),.34);
+    const y=baseline+peak*amplitude*edge*jagged;
+    positions.push(x,y,-.7, x,baseline-8,-.7);
+    const shade=.18+peak*.62;for(let k=0;k<2;k++){const c=dark.clone().lerp(lit,shade*(k===0?1:.65));colors.push(c.r,c.g,c.b);}
+    if(i<segments){const a=i*2;indices.push(a,a+2,a+1,a+1,a+2,a+3);}
   }
-  return {scene,group,moon,stars,farStars,lake,fireflies,shooting,clouds:group.children.filter(o=>o.material?.uniforms?.uTime)};
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));g.setIndex(indices);g.computeVertexNormals();return g;
 }
-
-worlds.entrance = createWorld('entrance');
-worlds.heaven = createWorld('heaven');
-worlds.heaven.scene.visible = false;
-if (window.__universeWorld === 'heaven') { worlds.entrance.scene.visible = false; worlds.heaven.scene.visible = true; activeWorld = 'heaven'; }
-
-document.addEventListener('universe:world', event => {
-  const next = event.detail === 'heaven' ? 'heaven' : 'entrance';
-  if (!worlds[next]) return;
-  worlds[activeWorld].scene.visible = false;
-  activeWorld = next;
-  worlds[activeWorld].scene.visible = true;
-  camera.position.set(0, 1.6, 19);
-  camera.lookAt(0, 0.1, -2);
-});
-
-const resize = () => {
-  const w=window.innerWidth,h=window.innerHeight;
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.35));
-  renderer.setSize(w,h,false);
-  camera.aspect=w/h;
-  camera.position.set(0, 0.25, 24);
-  camera.lookAt(0, -0.15, -3.2);
-  camera.updateProjectionMatrix();
-  const moonX = (w / h < 0.78) ? 3.0 : 6.0;
-  worlds.entrance.moon.position.x = moonX;
-  worlds.heaven.moon.position.x = moonX;
-};
-window.addEventListener('resize',resize,{passive:true});
-
-function animate(){
-  requestAnimationFrame(animate);
-  if(document.hidden) return;
-  const t=clock.getElapsedTime();
-  const w=worlds[activeWorld];
-  if(!reducedMotion){
-    w.group.rotation.y=Math.sin(t*.055)*.012;
-    w.group.position.y=Math.sin(t*.16)*.045;
-    w.moon.position.y=(activeWorld==='entrance'?5.3:5.8)+Math.sin(t*.12)*.055;
-    w.stars.rotation.z=Math.sin(t*.018)*.004;
-    w.farStars.rotation.z=-Math.sin(t*.012)*.003;
-    w.fireflies.position.y=Math.sin(t*.22)*.08;
-    for(const cloud of w.clouds) cloud.material.uniforms.uTime.value=t;
-    w.lake.material.uniforms.uTime.value=t;
-    for(const s of w.shooting){
-      const phase=(t+s.offset)%22;
-      const visible=phase>1.4&&phase<2.1;
-      s.line.material.opacity=visible?Math.sin((phase-1.4)/.7*Math.PI)*.85:0;
-      s.line.position.x=visible?(phase-1.4)*-2.2:0;
-      s.line.position.y=visible?(phase-1.4)*-1.0:0;
-    }
-  }
-  renderer.render(w.scene,camera);
+function addRidge(group, cfg){const mesh=new THREE.Mesh(ridgeGeometry(cfg.width,220,cfg.base,cfg.amp,cfg.seed,cfg.jag||1),new THREE.MeshStandardMaterial({vertexColors:true,roughness:1,side:THREE.DoubleSide}));mesh.position.z=cfg.z;group.add(mesh);return mesh;}
+function addRockSpire(group,x,y,z,s,seed){const g=new THREE.Group();g.position.set(x,y,z);group.add(g);for(let i=0;i<7;i++){const h=s*(.55+rand(seed+i)*.9),r=s*(.13+rand(seed+i+20)*.17);const m=new THREE.Mesh(new THREE.ConeGeometry(r,h,5),new THREE.MeshStandardMaterial({color:i%2?0x34264e:0x49345f,roughness:1,flatShading:true}));m.position.set((rand(seed+i+40)-.5)*s*.45,h*.35,(rand(seed+i+60)-.5)*s*.3);m.rotation.z=(rand(seed+i+80)-.5)*.24;g.add(m);}return g;}
+function addLake(group){
+ const geo=new THREE.PlaneGeometry(48,15,1,1);
+ const mat=new THREE.ShaderMaterial({uniforms:{uTime:{value:0}},vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,fragmentShader:`varying vec2 vUv;uniform float uTime;float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}void main(){float y=vUv.y;float wave=sin(vUv.x*110.0+uTime*1.2)*.012+sin(vUv.x*43.0-uTime*.8)*.018;float lines=pow(max(0.0,sin((y*100.0+wave*95.0)+uTime*1.6)),14.0);float reflection=exp(-pow((vUv.x-.52)*23.0,2.0))*smoothstep(.1,.75,y);float horizon= smoothstep(0.0,.75,y);vec3 deep=vec3(.035,.025,.095);vec3 violet=vec3(.17,.09,.23);vec3 col=mix(deep,violet,horizon);col+=vec3(.54,.25,.43)*lines*(.12+reflection*.85);col+=vec3(.35,.16,.34)*reflection*.16;gl_FragColor=vec4(col,1.0);}`,depthWrite:true});
+ const water=new THREE.Mesh(geo,mat);water.rotation.x=-Math.PI/2;water.position.set(0,-8.8,-2);group.add(water);return water;
 }
+function makeFlower(group,x,y,z,scale,seed){
+ const g=new THREE.Group();g.position.set(x,y,z);g.scale.setScalar(scale);group.add(g);
+ const stem=new THREE.Mesh(new THREE.CylinderGeometry(.012,.02,.9,5),new THREE.MeshStandardMaterial({color:0x283c37}));stem.position.y=.42;stem.rotation.z=(rand(seed)-.5)*.35;g.add(stem);
+ const center=new THREE.Mesh(new THREE.SphereGeometry(.075,10,8),new THREE.MeshStandardMaterial({color:0xf8c4df,emissive:0x5b294a,emissiveIntensity:.3}));center.position.y=.92;g.add(center);
+ const petalMat=new THREE.MeshStandardMaterial({color:rand(seed+1)>.5?0xffb9db:0xe6a5d5,roughness:.8,side:THREE.DoubleSide});
+ for(let i=0;i<7;i++){const a=i*Math.PI*2/7;const p=new THREE.Mesh(new THREE.SphereGeometry(.12,10,8),petalMat);p.scale.set(.65,1.35,.28);p.position.set(Math.cos(a)*.12,.92+Math.sin(a)*.12,Math.sin(a)*.12);p.rotation.z=-a;g.add(p);}
+ return g;
+}
+function createWorld(kind){
+ const scene=new THREE.Scene();scene.background=new THREE.Color(0x160d2c);scene.fog=new THREE.FogExp2(0x24143b,.0085);
+ const group=new THREE.Group();scene.add(group);
+ scene.add(new THREE.AmbientLight(0x9a7aaa,1.15));
+ const horizon=new THREE.PointLight(0xe69ac7,21,48,2);horizon.position.set(-1.8,-5.1,7);scene.add(horizon);
+ const moon=addMoon(group,kind==='entrance'?7.1:7.0,kind==='entrance'?7.4:7.7,kind==='entrance'?1.24:1.32);
+ const stars=addStars(group,kind==='entrance'?1900:2200,47,27,-9,-35,.075,.95);const farStars=addStars(group,600,60,34,-37,-58,.045,.55);
+ // Bright, mottled magenta nebula behind the clouds; three transparent layers drift independently.
+ const nebulaCanvas=document.createElement('canvas');nebulaCanvas.width=1024;nebulaCanvas.height=512;const ctx=nebulaCanvas.getContext('2d');
+ for(let i=0;i<130;i++){const x=rand(i+900)*1024,y=rand(i+1200)*512,r=25+rand(i+1500)*115;const grad=ctx.createRadialGradient(x,y,0,x,y,r);grad.addColorStop(0,`rgba(${130+Math.floor(rand(i+5)*90)},${45+Math.floor(rand(i+8)*60)},${140+Math.floor(rand(i+9)*85)},${.035+rand(i+10)*.11})`);grad.addColorStop(1,'rgba(70,30,100,0)');ctx.fillStyle=grad;ctx.fillRect(x-r,y-r,r*2,r*2);}
+ const nebTex=new THREE.CanvasTexture(nebulaCanvas);nebTex.colorSpace=THREE.SRGBColorSpace;
+ for(let i=0;i<3;i++){const m=new THREE.MeshBasicMaterial({map:nebTex,transparent:true,opacity:.7-i*.14,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide});const p=new THREE.Mesh(new THREE.PlaneGeometry(37,17),m);p.position.set(i===1?2:-2,2.2-i*.8,-23-i*3);group.add(p);}
+ // Reference-style tall cloud towers framing the central sky, plus a luminous low horizon bank.
+ const banks=[];
+ banks.push(addCloudBank(group,{x:-13.2,y:-1.3,z:-5.4,width:10,height:8,depth:3.4,scale:1.8,count:45,seed:8,shadow:0x33234f,light:0xd889b9}));
+ banks.push(addCloudBank(group,{x:13.2,y:-.8,z:-5.8,width:9.5,height:7.5,depth:3.2,scale:1.65,count:42,seed:15,shadow:0x34234e,light:0xd98ab8}));
+ banks.push(addCloudBank(group,{x:0,y:-5.4,z:-7.2,width:37,height:4.6,depth:4.5,scale:1.15,count:75,seed:23,shadow:0x302449,light:0xc77fae}));
+ banks.push(addCloudBank(group,{x:-13,y:-7.2,z:-1.2,width:15,height:3.6,depth:2.7,scale:1.05,count:35,seed:33,shadow:0x30234a,light:0xb979a9}));
+ banks.push(addCloudBank(group,{x:13,y:-7.3,z:-1.4,width:14,height:3.6,depth:2.8,scale:1.05,count:34,seed:43,shadow:0x30234a,light:0xc982b1}));
+ // Far mountain silhouettes and closer jagged rock edges.
+ addRidge(group,{width:52,base:-7.1,amp:3.5,z:-6.3,seed:3.4,jag:.95});
+ addRidge(group,{width:47,base:-8.2,amp:2.3,z:-3.4,seed:8.7,jag:1.15});
+ addRidge(group,{width:49,base:-9.1,amp:1.45,z:.2,seed:12.4,jag:1.2});
+ if(kind==='heaven'){addRockSpire(group,15.2,-6.3,-.1,3.6,44);addRockSpire(group,17.0,-7.1,.5,2.3,61);}
+ const lake=addLake(group);
+ const flowers=[];
+ for(let i=0;i<36;i++){const side=i<20?-1:1;const x=side*(8+rand(i+50)*10);flowers.push(makeFlower(group,x,-10.4+rand(i+80)*1.6,2+rand(i+100)*2,.65+rand(i+130)*1.25,i+10));}
+ const firePos=[];for(let i=0;i<90;i++)firePos.push((rand(i+700)-.5)*36,-7.5-rand(i+750)*3,2+rand(i+800)*1.5);
+ const fg=new THREE.BufferGeometry();fg.setAttribute('position',new THREE.Float32BufferAttribute(firePos,3));const fire=new THREE.Points(fg,new THREE.PointsMaterial({color:0xffc2e0,size:.055,transparent:true,opacity:.65,blending:THREE.AdditiveBlending,depthWrite:false}));group.add(fire);
+ return {scene,group,moon,stars,farStars,banks,lake,fire,flowers};
+}
+worlds.entrance=createWorld('entrance');worlds.heaven=createWorld('heaven');worlds.heaven.scene.visible=false;
+if(window.__universeWorld==='heaven'){worlds.entrance.scene.visible=false;worlds.heaven.scene.visible=true;active='heaven';}
+document.addEventListener('universe:world',e=>{const next=e.detail==='heaven'?'heaven':'entrance';worlds[active].scene.visible=false;active=next;worlds[active].scene.visible=true;});
+function resize(){renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.65));renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.fov=innerWidth/innerHeight<.72?51:42;camera.position.z=innerWidth/innerHeight<.72?31:25;camera.updateProjectionMatrix();camera.lookAt(0,-1.1,-4);}
+window.addEventListener('resize',resize,{passive:true});resize();
+function animate(){requestAnimationFrame(animate);if(document.hidden)return;const t=clock.getElapsedTime(),w=worlds[active];if(!reduceMotion){w.group.rotation.y=Math.sin(t*.035)*.008;w.group.position.y=Math.sin(t*.12)*.035;w.moon.position.y=(active==='entrance'?7.4:7.7)+Math.sin(t*.1)*.035;w.stars.rotation.z=Math.sin(t*.012)*.002;w.farStars.rotation.z=-Math.sin(t*.009)*.0015;w.lake.material.uniforms.uTime.value=t;w.fire.position.y=Math.sin(t*.2)*.06;for(let i=0;i<w.banks.length;i++){w.banks[i].position.x+=Math.sin(t*.025+i)*.0008;}}renderer.render(w.scene,camera);}
 animate();
