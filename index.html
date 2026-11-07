@@ -1,193 +1,93 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#17132f">
+  <meta name="theme-color" content="#160f2c">
   <title>A Little Universe ✦</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://images.pexels.com">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
-  <!-- WORLD 1: Mysterious entrance -->
-  <div class="entrance-world">
-    <div class="entrance-nebula"></div>
+  <!-- WORLD ONE: separate entrance landscape -->
+  <div class="entrance-world" aria-hidden="true">
     <div id="entranceStars"></div>
-    <div class="entrance-moon"></div>
-    <div class="entrance-horizon"></div>
+    <div class="entrance-fireflies"></div>
   </div>
 
   <section id="loginScreen" class="login-screen">
     <div class="login-content">
       <span class="login-star">✦</span>
-      <p class="eyebrow">♡</p>
-      <h1>A little universe ✧</h1>
+      <div class="login-flourish">⟶ ♡ ⟵</div>
+      <h1 class="reference-login-title">A little universe ✧</h1>
       <p class="login-description">Some things are meant for<br>the right person ♡</p>
-
       <form id="loginForm">
-        <input
-          id="passwordInput"
-          type="password"
-          placeholder="Enter the password ♡"
-          autocomplete="off"
-          required
-        >
-        <button type="submit" class="enter-button">
-          Unlock ♡
-        </button>
-        <p id="loginError" class="login-error"></p>
+        <label class="password-wrap">
+          <span aria-hidden="true">♙</span>
+          <input id="passwordInput" type="password" placeholder="Enter the password ♡" autocomplete="off" required>
+        </label>
+        <button type="submit" class="enter-button">Unlock ♡</button>
+        <p id="loginError" class="login-error" role="alert"></p>
       </form>
       <span class="login-bottom">Written in the stars ♡</span>
     </div>
   </section>
 
-  <!-- WORLD 2: Romantic galaxy -->
+  <!-- WORLD TWO: its own landscape, different from the entrance -->
   <main id="universeScreen" class="hidden">
-    <div class="heaven-world">
-
-      <!-- Deep space and nebula layers -->
-      <div class="space-glow"></div>
-      <div class="pink-nebula nebula-a"></div>
-      <div class="pink-nebula nebula-b"></div>
-      <div class="pink-nebula nebula-c"></div>
-      <div class="pink-nebula nebula-d"></div>
-
-      <!-- Galaxy spiral -->
-      <div class="galaxy">
-        <div class="galaxy-core"></div>
-        <div class="galaxy-arm arm-one"></div>
-        <div class="galaxy-arm arm-two"></div>
-        <div class="galaxy-arm arm-three"></div>
-      </div>
-
-      <!-- Crescent moon -->
-      <div class="heaven-moon">
-        <div class="silver-crescent"></div>
-        <div class="silver-moonlight"></div>
-        <span class="moon-spark moon-spark-one">✦</span>
-        <span class="moon-spark moon-spark-two">✧</span>
-      </div>
-
-      <!-- Stars and floating dust -->
+    <div class="heaven-world" aria-hidden="true">
       <div id="universeStars"></div>
+      <div class="scene-shooting-stars">
+        <i></i><i></i><i></i>
+      </div>
       <div id="universeDust"></div>
-
-      <!-- Shooting stars -->
-      <div class="shooting-star star-one"></div>
-      <div class="shooting-star star-two"></div>
-      <div class="shooting-star star-three"></div>
-      <div class="shooting-star star-four"></div>
-
-      <!-- Atmospheric light beams -->
-      <div class="cosmic-ribbon ribbon-one"></div>
-      <div class="cosmic-ribbon ribbon-two"></div>
-      <div class="orbit-ring orbit-one"></div>
-      <div class="orbit-ring orbit-two"></div>
-
-      <!-- Distant mountain landscape -->
-      <div class="mountain-layer far-mountains">
-        <div class="mountain mountain-far-one"></div>
-        <div class="mountain mountain-far-two"></div>
-        <div class="mountain mountain-far-three"></div>
-      </div>
-
-      <div class="mountain-layer near-mountains">
-        <div class="mountain mountain-near-one"></div>
-        <div class="mountain mountain-near-two"></div>
-        <div class="mountain mountain-near-three"></div>
-      </div>
-
-      <!-- Glowing horizon -->
-      <div class="horizon-light"></div>
-
-      <!-- Reflective lake -->
-      <div class="pink-lake">
-        <div class="lake-reflection"></div>
-        <div class="lake-shimmer shimmer-one"></div>
-        <div class="lake-shimmer shimmer-two"></div>
-        <div class="lake-shimmer shimmer-three"></div>
-      </div>
-
-      <!-- Foreground flowers -->
-      <div class="flower-field field-left">
-        <span class="flower flower-one">✿</span>
-        <span class="flower flower-two">✾</span>
-        <span class="flower flower-three">❀</span>
-        <span class="flower flower-four">✿</span>
-        <span class="flower flower-five">❁</span>
-      </div>
-
-      <div class="flower-field field-right">
-        <span class="flower flower-six">✿</span>
-        <span class="flower flower-seven">❀</span>
-        <span class="flower flower-eight">✾</span>
-        <span class="flower flower-nine">❁</span>
-        <span class="flower flower-ten">✿</span>
-      </div>
-
-      <div class="foreground-glow"></div>
     </div>
 
-    <!-- Main content -->
     <div class="heaven-content">
+      <div class="site-mark"><span>✦</span> a little universe</div>
 
       <header class="main-header">
-        <span class="header-ornament">✦</span>
         <p class="eyebrow">A NOTE UNDER THE NIGHT SKY</p>
         <h1>For this day;<br><em>and the little things.</em></h1>
         <p class="header-subtitle">No rush. Let the stars settle, then open today’s words.</p>
       </header>
 
-      <!-- Today's message -->
       <section class="today-section">
-        <div class="today-decoration decoration-left">✧</div>
-        <div class="today-decoration decoration-right">✦</div>
-
         <div class="today-letter">
           <div class="letter-top">
-            <span class="letter-symbol">☾</span>
-            <span id="todayDate"></span>
             <span class="letter-symbol">✧</span>
-          </div>
-
-          <div class="letter-divider"><span>✦</span></div>
-
-          <h2 id="todayTitle">A little note for today</h2>
-          <p id="todayMessage" class="today-message hidden"></p>
-
-          <div class="letter-actions">
-            <button id="revealButton" class="reveal-button" type="button">
-              Discover today's words <span>♡</span>
-            </button>
+            <span id="todayDate"></span>
             <button id="todayMusic" class="music-button" type="button" aria-label="Play music">♫</button>
           </div>
+          <h2 id="todayTitle">One small moment</h2>
+          <p id="todayMessage" class="today-message hidden"></p>
+          <div class="letter-actions">
+            <button id="revealButton" class="reveal-button" type="button">Reveal today’s message ♡</button>
+          </div>
+          <p class="letter-footnote">A little note, just for today.</p>
         </div>
       </section>
 
-      <!-- Previous memories -->
       <section class="archive-section">
         <div class="section-heading">
-          <span class="heading-star">✧</span>
           <p class="eyebrow">THE DAYS BEFORE</p>
           <h2>A trail of little stars</h2>
-          
         </div>
-
         <div id="archiveGrid" class="archive-grid"></div>
       </section>
 
       <footer class="page-footer">
-        <div class="footer-stars">✦ &nbsp; ✧ &nbsp; ☾ &nbsp; ✧ &nbsp; ✦</div>
+        <span>⟵ ─────</span>
         <p>made of stardust &amp; kind thoughts ♡ ☾</p>
+        <span>───── ⟶</span>
       </footer>
     </div>
   </main>
 
-  <!-- Memory popup -->
+  <!-- Archive note popup -->
   <div id="noteModal" class="note-modal hidden">
     <div id="modalBackdrop" class="modal-backdrop"></div>
     <div class="modal-shell">
@@ -195,7 +95,6 @@
         <button id="closeModal" class="close-modal" type="button" aria-label="Close">×</button>
         <span class="modal-star">✧</span>
         <p id="modalDate" class="modal-date"></p>
-        <div class="letter-divider"><span>✦</span></div>
         <h2 id="modalTitle"></h2>
         <p id="modalMessage" class="modal-message"></p>
         <button id="modalMusic" class="music-button" type="button" aria-label="Play music">♫</button>
@@ -204,7 +103,7 @@
     </div>
   </div>
 
-  <audio id="audioPlayer"></audio>
+  <audio id="audioPlayer" preload="none"></audio>
   <script src="app.js"></script>
 </body>
 </html>

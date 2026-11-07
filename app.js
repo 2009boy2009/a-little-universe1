@@ -1,152 +1,91 @@
-
 const ACCESS_PASSWORD = "Muskan";
-
 const $ = id => document.getElementById(id);
-
 let notes = {};
-let universeSceneCreated = false;
+let activeMusicButton = null;
 
-/* DATE */
 function getTodayKey() {
   const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 }
 
-/* WORLD ONE STARS */
-function makeEntranceStars() {
-  const holder = $("entranceStars");
+/* Small, fixed star counts: twinkle uses opacity/transform only. */
+function makeStars(holderId, count, className) {
+  const holder = $(holderId);
+  if (!holder || holder.childElementCount) return;
+  const fragment = document.createDocumentFragment();
 
-  for (let i = 0; i < 64; i++) {
+  for (let i = 0; i < count; i++) {
     const star = document.createElement("i");
-    star.className = "entrance-star";
-
-    if (Math.random() > 0.88) {
-      star.classList.add("bright");
-    }
-
-    star.style.left = Math.random() * 100 + "%";
-    star.style.top = Math.random() * 100 + "%";
-    star.style.animationDelay = Math.random() * 5 + "s";
-
-    holder.appendChild(star);
+    star.className = className + (Math.random() > 0.91 ? " bright" : "");
+    star.style.left = `${Math.random() * 100}%`;
+    star.style.top = `${Math.random() * 100}%`;
+    star.style.setProperty("--twinkle", `${4 + Math.random() * 5}s`);
+    star.style.animationDelay = `${Math.random() * 6}s`;
+    fragment.appendChild(star);
   }
+  holder.appendChild(fragment);
 }
 
-/* WORLD TWO STARS */
-function makeUniverseStars() {
-  const holder = $("universeStars");
-
-  for (let i = 105; i > 0; i--) {
-    const star = document.createElement("i");
-    star.className = "universe-star";
-
-    const size = Math.random() > 0.9 ? 3 : Math.random() * 2 + 1;
-
-    star.style.width = size + "px";
-    star.style.height = size + "px";
-    star.style.left = Math.random() * 100 + "%";
-    star.style.top = Math.random() * 100 + "%";
-    star.style.animationDelay = Math.random() * 5 + "s";
-    star.style.animationDuration = (2 + Math.random() * 4) + "s";
-
-    if (Math.random() > 0.9) {
-      star.classList.add("bright");
-    }
-
-    holder.appendChild(star);
-  }
-}
-
-/* FLOATING LIGHT PARTICLES */
-function makeCosmicDust() {
+function makeDust() {
   const holder = $("universeDust");
-
-  for (let i = 0; i < 12; i++) {
+  if (!holder || holder.childElementCount) return;
+  const fragment = document.createDocumentFragment();
+  for (let i = 0; i < 14; i++) {
     const particle = document.createElement("i");
     particle.className = "dust-particle";
-
-    particle.style.left = Math.random() * 100 + "%";
-    particle.style.top = (40 + Math.random() * 60) + "%";
-    particle.style.animationDelay = Math.random() * 12 + "s";
-    particle.style.animationDuration = (9 + Math.random() * 10) + "s";
-
-    holder.appendChild(particle);
+    particle.style.left = `${Math.random() * 100}%`;
+    particle.style.top = `${48 + Math.random() * 48}%`;
+    particle.style.animationDelay = `${Math.random() * 18}s`;
+    particle.style.animationDuration = `${17 + Math.random() * 9}s`;
+    fragment.appendChild(particle);
   }
+  holder.appendChild(fragment);
 }
 
-/* LOAD ORIGINAL MESSAGES */
 async function loadMessages() {
-  const response = await fetch("messages.json");
-
-  if (!response.ok) {
-    throw new Error("Messages file could not be loaded.");
-  }
-
+  const response = await fetch("messages.json", { cache: "no-cache" });
+  if (!response.ok) throw new Error("Messages file could not be loaded.");
   const data = await response.json();
   notes = data.messages || {};
-
   renderNotes();
   showTodayMessage();
 }
 
-/* TODAY'S MESSAGE */
 function showTodayMessage() {
   const today = getTodayKey();
   const note = notes[today];
 
-  $("todayDate").textContent = new Date().toLocaleDateString(
-    "en-GB",
-    {
-      day: "numeric",
-      month: "long",
-      year: "numeric"
-    }
-  );
-
+  $("todayDate").textContent = new Date().toLocaleDateString("en-GB", {
+    day: "numeric", month: "long", year: "numeric"
+  });
   $("todayMessage").textContent = "";
   $("todayMessage").classList.add("hidden");
 
   if (!note) {
-    $("todayTitle").textContent = "A little note for today";
-
-    $("todayMessage").textContent =
-      "No note for today yet. Perhaps a new little memory will bloom soon ✧";
-
+    $("todayTitle").textContent = "One small moment";
+    $("todayMessage").textContent = "No note for today yet. Perhaps a new little memory will bloom soon ✧";
     $("todayMessage").classList.remove("hidden");
     $("revealButton").classList.add("hidden");
-
     setMusicButton($("todayMusic"), "");
     $("todayMusic").onclick = null;
-
     return;
   }
 
   $("todayTitle").textContent = note.title;
   $("todayMessage").textContent = note.message;
-
-  $("todayMessage").classList.add("hidden");
   $("revealButton").classList.remove("hidden");
-
   setMusicButton($("todayMusic"), note.music);
 
   $("revealButton").onclick = () => {
     $("todayMessage").classList.remove("hidden");
     $("revealButton").classList.add("hidden");
   };
-
-  $("todayMusic").onclick = () =>
-    playMusic(note.music, $("todayMusic"));
+  $("todayMusic").onclick = () => playMusic(note.music, $("todayMusic"));
 }
 
-/* PREVIOUS NOTES */
 function renderNotes() {
   const grid = $("archiveGrid");
   grid.innerHTML = "";
-
   const today = getTodayKey();
 
   Object.entries(notes)
@@ -159,7 +98,7 @@ function renderNotes() {
 
       const decor = document.createElement("span");
       decor.className = "decor";
-      decor.textContent = "✧  ✦  ✧";
+      decor.textContent = "⟶ ✧ ⟵";
 
       const dateEl = document.createElement("span");
       dateEl.className = "date";
@@ -173,41 +112,42 @@ function renderNotes() {
       arrow.textContent = "⌄";
 
       card.append(decor, dateEl, title, arrow);
-
-      card.onclick = () => openNote(date, note);
-
+      card.addEventListener("click", () => openNote(date, note));
       grid.appendChild(card);
     });
 }
 
-/* OPEN OLD MESSAGE */
 function openNote(date, note) {
   $("modalDate").textContent = note.dateLabel;
   $("modalTitle").textContent = note.title;
   $("modalMessage").textContent = note.message;
-
   setMusicButton($("modalMusic"), note.music);
-
-  $("modalMusic").onclick = () =>
-    playMusic(note.music, $("modalMusic"));
-
+  $("modalMusic").onclick = () => playMusic(note.music, $("modalMusic"));
   $("noteModal").classList.remove("hidden");
 }
 
-function closeNote() {
-  $("noteModal").classList.add("hidden");
-  const audio = $("audioPlayer");
-  if ($("modalMusic").classList.contains("playing")) {
+function resetMusicButtons() {
+  document.querySelectorAll(".music-button").forEach(button => {
+    button.classList.remove("playing");
+    button.textContent = "♫";
+  });
+}
+
+function stopArchiveMusicOnClose() {
+  if (activeMusicButton === $("modalMusic")) {
+    const audio = $("audioPlayer");
     audio.pause();
     audio.currentTime = 0;
-    document.querySelectorAll(".music-button").forEach(button => {
-      button.classList.remove("playing");
-      button.textContent = "♫";
-    });
+    activeMusicButton = null;
+    resetMusicButtons();
   }
 }
 
-/* MUSIC */
+function closeNote() {
+  stopArchiveMusicOnClose();
+  $("noteModal").classList.add("hidden");
+}
+
 function setMusicButton(button, path) {
   button.disabled = !path;
   button.title = path ? "Play music" : "Music will be added later";
@@ -217,74 +157,69 @@ function setMusicButton(button, path) {
 
 async function playMusic(path, button) {
   if (!path) return;
-
   const audio = $("audioPlayer");
+  const absolutePath = new URL(path, location.href).href;
 
-  if (audio.src !== new URL(path, location.href).href) {
+  if (audio.src !== absolutePath) {
     audio.pause();
     audio.src = path;
+    activeMusicButton = null;
+    resetMusicButtons();
   }
 
   if (audio.paused) {
     try {
       await audio.play();
-
-      document.querySelectorAll(".music-button").forEach(b => {
-        b.classList.remove("playing");
-        b.textContent = "♫";
-      });
-
+      resetMusicButtons();
       button.classList.add("playing");
       button.textContent = "Ⅱ";
+      activeMusicButton = button;
     } catch (error) {
       alert("Please check the MP3 file and its path.");
     }
-  } else {
+  } else if (activeMusicButton === button) {
     audio.pause();
     button.classList.remove("playing");
     button.textContent = "♫";
+    activeMusicButton = null;
+  } else {
+    /* A different music button was pressed while audio was already playing. */
+    audio.pause();
+    audio.currentTime = 0;
+    audio.src = path;
+    try {
+      await audio.play();
+      resetMusicButtons();
+      button.classList.add("playing");
+      button.textContent = "Ⅱ";
+      activeMusicButton = button;
+    } catch (error) {
+      alert("Please check the MP3 file and its path.");
+    }
   }
 }
 
-$("audioPlayer").addEventListener("pause", () => {
-  document.querySelectorAll(".music-button").forEach(button => {
-    button.classList.remove("playing");
-    button.textContent = "♫";
-  });
-});
-
 $("audioPlayer").addEventListener("ended", () => {
-  document.querySelectorAll(".music-button").forEach(button => {
-    button.classList.remove("playing");
-    button.textContent = "♫";
-  });
+  activeMusicButton = null;
+  resetMusicButtons();
 });
 
-/* ENTER THE HEAVENLY WORLD */
 $("loginForm").addEventListener("submit", async event => {
   event.preventDefault();
 
   if ($("passwordInput").value !== ACCESS_PASSWORD) {
-    $("loginError").textContent =
-      "That isn't the little secret. Try again ✧";
+    $("loginError").textContent = "That isn't the little secret. Try again ✧";
     return;
   }
 
   $("loginError").textContent = "";
-
   document.body.classList.add("entering");
 
-  if (!universeSceneCreated) {
-    makeUniverseStars();
-    makeCosmicDust();
-    universeSceneCreated = true;
-  }
-
-  setTimeout(async () => {
+  window.setTimeout(async () => {
     $("loginScreen").classList.add("hidden");
     $("universeScreen").classList.remove("hidden");
-
-    document.body.classList.add("universe-active");
+    makeStars("universeStars", 78, "universe-star");
+    makeDust();
 
     try {
       await loadMessages();
@@ -292,18 +227,13 @@ $("loginForm").addEventListener("submit", async event => {
       alert("Could not load messages.json. Check that it is beside index.html.");
       console.error(error);
     }
-  }, 1100);
+  }, 650);
 });
 
-/* CLOSE MEMORY */
-$("closeModal").onclick = closeNote;
-$("modalBackdrop").onclick = closeNote;
-
+$("closeModal").addEventListener("click", closeNote);
+$("modalBackdrop").addEventListener("click", closeNote);
 document.addEventListener("keydown", event => {
-  if (event.key === "Escape") {
-    closeNote();
-  }
+  if (event.key === "Escape" && !$("noteModal").classList.contains("hidden")) closeNote();
 });
 
-/* START THE FIRST WORLD */
-makeEntranceStars();
+makeStars("entranceStars", 54, "entrance-star");
